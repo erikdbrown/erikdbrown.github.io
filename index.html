@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="jquery.js"></script>
+    <script src="data_generator.js"></script>
+    <link rel="stylesheet" type="text/css" href="stylesheet.css">
+  </head>
+  <body>
+    <header id='header'>
+      <img height='70px' src="assets/birdlogo.png" />
+    </header>
+    <div id='container'>
+      <div id='tweeting'>
+      <textarea id="tweet_box" cols='58' rows='1' placeholder="What's happening?"></textarea>
+      <a href='#' id='post'>Twittle</a>
+      </div>
+      <section id="content">
+        <a href="#" id='return' class='hidden'><< Back to All Twittles</a>
+        <a href="#" id='refresh'>Refresh Feed</a>
+        <div id="tweets"></div>
+      </section>
+    </div>
+    <script>
+
+    $(document).ready(function(){
+      var $body = $('body');
+      //$body.html('');
+
+      // sets the "- xxs/xxm ago" for each tweet
+      var howLongAgo = function(tweetTime) {
+            var timeNow = new Date();
+            var timeDifferenceInSec = Math.floor(((timeNow - tweetTime)/1000));
+
+            if (timeDifferenceInSec > 3600) {
+              var diffInHours = timeDifferenceInSec/3600;
+              var numOfHours = Math.floor(diffInHours);
+              var numOfMin = Math.floor((diffInHours - numOfHours) * 60);
+              var minOrHoursAgo = '- ' + numOfHours + ' hr' + (numOfHours > 1 ? 's ' : ' ') + numOfMin + ' min' + (numOfMin > 1 ? 's ' : ' ') + 'ago';
+            } else if (timeDifferenceInSec >= 60){
+              var numOfMin =  Math.floor(timeDifferenceInSec/60)
+              minOrHoursAgo = '- ' + numOfMin + ' min' + (numOfMin > 1 ? 's ' : ' ') + 'ago';
+            } else {
+              minOrHoursAgo = '- ' + Math.floor(timeDifferenceInSec) + ' sec ago';
+            }
+            return ' ' +  minOrHoursAgo;
+          };
+
+          // modified this so that it takes an array of tweets, tweetArray. That way it can be used for only showing a specific user's tweets.
+      var showTweets = function(tweetArray) {
+        $('#tweets').empty();
+        var index = tweetArray.length - 1;
+
+        while(index >= 0){
+          var tweet = tweetArray[index];
+          var $tweet = $('<article></article>');
+
+          $tweet.html('@<a href="#" class="' + tweet.user +'">' + tweet.user + '</a>: ' + tweet.message + '<span class="postTime">' + howLongAgo(tweet.created_at) + '</span>');
+          $tweet.appendTo($('#tweets'));
+          index -= 1;
+        }
+
+        // when clickingo on a username only show that user's tweets
+        $('#tweets a').on('click', function() {
+          var whatClass = $(this).attr('class');
+          showTweets(streams.users[whatClass]);
+          // only toggle the "Back to all twittles" if display is none 
+          if ($('#return').css('display') === 'none') {
+            $('#return').toggle();
+          }
+        })
+      };
+
+      // show tweets when the page is first loaded
+      showTweets(streams.home);
+      
+
+      // show all tweets in stream.home when Refresh Feed button is clicked.
+      // if a specific user's tweets are displayed, refreah only the user's tweets
+      $('#refresh').on('click', function() {
+        if ($('#return').css('display') === 'none') {
+          showTweets(streams.home);
+        } else {
+          var username = $('#tweets').find('a').attr('class');
+          showTweets(streams.users[username]);
+        }
+      });
+
+      // Show all tweets when "back to all twittles" is clicked. Remove button.
+      $('#return').on('click', function() {
+        showTweets(streams.home);
+        $('#return').toggle();
+      })
+      
+      // when the "Twittle" button is pushed, set tweet as the value of "tweet_box"
+      // use tweet as the arguments for writeTweet
+      // Refresh feed and reset value of "tweet_box"
+      $('#post').on('click', function() {
+        var tweet = $('#tweet_box').val();
+        if (tweet) {
+          writeTweet(tweet);
+          showTweets(streams.home);
+          $('#tweet_box').val('');
+        }
+      });
+
+      // Expand "tweet_box" when clicked
+      $('#tweet_box').on('click', function() {
+        $(this).attr('rows', 4);
+      });
+
+      // Return "tweet_box" to initial size when unfocused.
+      $('#tweet_box').focusout(function() {
+        $(this).attr('rows', 1);
+      })
+});
+
+    </script>
+  </body>
+</html>
